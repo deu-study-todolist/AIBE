@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)  # 모든 도메인에서의 요청 허용
 
 # OpenAI 클라이언트 생성
-client = OpenAI(api_key="Key")  # 실제 키는 보안상 숨기기
+client = OpenAI(api_key="key")  # 실제 키는 보안상 숨기기
 
 # 1. CSV 로딩 (dialect: standard, region)
 def load_dialect_dictionary(csv_path):
@@ -29,10 +29,15 @@ def load_dialect_dictionary(csv_path):
 
 # 2. 단어 유사도 변환
 def convert_word(word, mapping, cutoff=0.6):
+    # 이미 표준어로 쓰인 단어면 변환하지 않음
+    if word in mapping.values():
+        return word, word, False
+
     candidates = get_close_matches(word, mapping.keys(), n=1, cutoff=cutoff)
     if candidates:
         return mapping[candidates[0]], candidates[0], False
     return word, None, True
+
 
 # 3. 문장 변환 + 일치한 사투리 단어 리스트도 반환
 def convert_sentence(sentence, mapping):
@@ -47,6 +52,7 @@ def convert_sentence(sentence, mapping):
         if dialect_key:
             dialect_words.append(dialect_key)
         if failed:
+            print(f"[!] '{word}' 단어를 변환할 수 없습니다.")
             trigger = True
 
     return ' '.join(converted_words), trigger, dialect_words
